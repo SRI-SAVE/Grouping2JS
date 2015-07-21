@@ -1,6 +1,6 @@
 // Copyright 2015, SRI International
 
-'use strict';
+'use strict'; // jshint node: true
 
 var g2js = require('./lib/grouping2js')({ strict: true }),
     dae2g = require('./lib/dae2grouping')({ strict: true }),
@@ -8,7 +8,7 @@ var g2js = require('./lib/grouping2js')({ strict: true }),
     pretty = require('js-object-pretty-print').pretty,
     beautify_html = require('js-beautify').html;
 
-// public via exports.module
+// public via module.exports
 var grouping2html = function(sourceXml) {
     var groupingObj = g2js.grouping2js(sourceXml);
 
@@ -55,13 +55,21 @@ var semanticXml2html = function(sourceXml) {
     var text =  beautify_html(sourceXml),
         html = simpleText2html(text);
 
-    return { html: html, text: text };    
+    return { html: html, text: text };
 };
 
 var semanticObj2xml = function(semanticObj, groupingObj) {
     semanticObj = semanticObj || { };
 
-    var semanticXml = '<?xml version="1.0" encoding="utf-8"?><S3D>';
+    var semanticXml = '<?xml version="1.0" encoding="utf-8"?><S3D>',
+        eachGroup = function(group) {
+            var node = group.node === undefined? '' : ' node="' + group.node + '"';
+
+            semanticXml += '<group name="' + group.name + '"' + node + ' sid="' + group.sid + '" flora_ref="' + group.flora_ref + '"/>';
+        },
+        eachAssetObj = function(obj) {
+            semanticXml += '<object name="' + obj.name + '" node="' + obj.node + '" sid="' + obj.sid + '" flora_ref="' + obj.flora_ref + '"/>';
+        };
 
     for (var p in semanticObj) {
         if (p == 'head') {
@@ -78,17 +86,8 @@ var semanticObj2xml = function(semanticObj, groupingObj) {
 
             semanticXml += '<semantic_mapping>';
             semanticXml += '<asset name="' + assetObj.name + '" uri="' + assetObj.uri + '" sid="' + assetObj.sid + '" flora_ref="' + assetObj.flora_ref + '">';
-
-            assetObj.groups.forEach(function(group) {
-                var node = group.node === undefined? '' : ' node="' + group.node + '"';
-
-                semanticXml += '<group name="' + group.name + '"' + node + ' sid="' + group.sid + '" flora_ref="' + group.flora_ref + '"/>';
-            });
-
-            assetObj.objs.forEach(function(obj) {
-                semanticXml += '<object name="' + obj.name + '" node="' + obj.node + '" sid="' + obj.sid + '" flora_ref="' + obj.flora_ref + '"/>';
-            });
-
+            assetObj.groups.forEach(eachGroup);
+            assetObj.objs.forEach(eachAssetObj);
             semanticXml += '</asset>';
             semanticXml += '</semantic_mapping>';
 
@@ -108,24 +107,27 @@ var simpleText2html = function(text) {
 };
 
 var groupsparts2xml = function(groupingObj, groupingXml) {
+    var eachGroup = function(group) {
+        groupingXml += '<group name="' + group.name + '"';
+
+        if (group.node) {
+            groupingXml += ' node="' + group.node + '">';
+        } else {
+            groupingXml += '>';
+        }
+
+        groupingXml = groupsparts2xml(group, groupingXml);
+        groupingXml += '</group>';
+    },
+    eachPart = function(part) {
+        groupingXml += '<part node="' + part + '"/>';
+    };
+
     for (var p in groupingObj) {
         if (p == 'groups') {
-            groupingObj.groups.forEach(function(group) {
-                groupingXml += '<group name="' + group.name + '"';
-
-                if (group.node) {
-                    groupingXml += ' node="' + group.node + '">';
-                } else {
-                    groupingXml += '>';
-                }
-
-                groupingXml = groupsparts2xml(group, groupingXml);
-                groupingXml += '</group>';
-            });
+            groupingObj.groups.forEach(eachGroup);
         } else if (p == 'parts') {
-            groupingObj.parts.forEach(function(part) {
-                groupingXml += '<part node="' + part + '"/>';
-            });
+            groupingObj.parts.forEach(eachPart);
         }
     }
 
@@ -170,6 +172,6 @@ module.exports = {
     daeParser: dae2g.parser
 };
 
-try {
-    window.G2JS = module.exports;
-} catch(e) { } // ignore "ReferenceError: window is not defined" when running on the server
+if (typeof window !== 'undefined') {
+  window.G2JS = module.exports; // jshint undef: false
+}

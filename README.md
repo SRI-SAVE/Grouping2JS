@@ -10,22 +10,24 @@ $ npm install
 
 # Build (Browser)
 ```
-$ build.sh
+$ npm run build => minified and map source (g2js.min.js and g2js.js.map)
+$ npm run source => source bundle (g2js.bundle.js)
+```
 
-or
-
-node_modules/.bin/browserify index.js -o dist/g2js.bundle.js
+# JSHint
+```
+$ npm run lint
 ```
 
 # Test
 ```
-$ node test/test-nodejs.js
+$ npm run test
 ```
 
 # Usage
 ```
 Browser:
-<script src="dist/g2js.bundle.js"></script>
+<script src="dist/g2js.min.js"></script>
 
 Nodejs:
 $ node -e "var G2JS = require('./index'), groupingObj = G2JS.g2js('<grouping name=\"asset\"/>'); console.log(groupingObj);"
@@ -33,7 +35,7 @@ $ node -e "var G2JS = require('./index'), groupingObj = G2JS.g2js('<grouping nam
 
 or
 
-var G2JS = require('Grouping2JS'); // once placed in your node_modules
+var G2JS = require('Grouping2JS'); // once cloned to your node_modules or installed
 console.log(G2JS.g2js('<grouping name="asset"/>'));
 // => { name: 'asset' }
 ```
